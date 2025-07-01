@@ -1,0 +1,38 @@
+replicaCount: 2
+
+image:
+  repository: yourdockerhubusername/tradesocio-api
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  hosts:
+    - host: tradesocio.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+  requests:
+    memory: "256Mi"
+    cpu: "250m"
+
+securityContext:
+  runAsUser: 1000
+  runAsNonRoot: true
+  fsGroup: 2000
+
+rbac:
+  create: true
