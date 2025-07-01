@@ -33,6 +33,9 @@ securityContext:
   runAsUser: 1000
   runAsNonRoot: true
   fsGroup: 2000
-
+serviceAccount:
+  create: true
+  name: tradesocio-sa
+  
 rbac:
   create: true
