@@ -1,9 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            image 'maven:3.9.4-eclipse-temurin-17'
-        }
-    }
+    agent any
 
     environment {
         IMAGE_NAME = "manish439/tradesocio-api"
@@ -12,25 +8,34 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                checkout branch: 'main', url: 'https://github.com/Crawlerbeast-m/tradesocioAssessment.git'
+                checkout([$class: 'GitSCM',
+                          branches: [[name: '*/main']],
+                          userRemoteConfigs: [[url: 'https://github.com/Crawlerbeast-m/tradesocioAssessment.git']]
+                ])
             }
         }
 
         stage('Build JAR') {
+            agent {
+                docker {
+                    image 'maven:3.9.4-eclipse-temurin-17'
+                    args '-v $HOME/.m2:/root/.m2' // Optional: cache Maven deps
+                }
+            }
             steps {
                 sh 'mvn clean package -DskipTests'
             }
         }
 
         stage('Build Docker Image') {
+            agent any
             steps {
-                script {
-                    sh 'docker build -t $IMAGE_NAME .'
-                }
+                sh 'docker build -t $IMAGE_NAME .'
             }
         }
 
         stage('Push Docker Image') {
+            agent any
             steps {
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh """
@@ -42,8 +47,9 @@ pipeline {
         }
 
         stage('Deploy') {
+            agent any
             steps {
-                echo "Run deployment script here (e.g., docker run on server, or trigger k8s job)"
+                echo "Run deployment script here (e.g., docker run, k8s apply)"
             }
         }
     }
