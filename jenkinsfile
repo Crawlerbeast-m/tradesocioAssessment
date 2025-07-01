@@ -1,0 +1,59 @@
+pipeline {
+    agent {
+        docker {
+            image 'maven:3.9.4-eclipse-temurin-17'
+        }
+    }
+
+    environment {
+        IMAGE_NAME = "manish439/tradesocio-api"
+    }
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build JAR') {
+            steps {
+                sh 'mvn clean package -DskipTests'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh 'docker build -t $IMAGE_NAME .'
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh """
+                      echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                      docker push $IMAGE_NAME
+                    """
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo "Run deployment script here (e.g., docker run on server, or trigger k8s job)"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'CI/CD pipeline completed successfully.'
+        }
+        failure {
+            echo 'Pipeline failed.'
+        }
+    }
+}
